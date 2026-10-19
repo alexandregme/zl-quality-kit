@@ -27,7 +27,7 @@
     "node": ">=20.6"
   },
   "bin": {
-    "zl-lint": "./bin/zl-lint.mjs"
+    "zl-lint": "bin/zl-lint.mjs"
   },
   "exports": {
     "./eslint": "./configs/eslint.config.mjs",
