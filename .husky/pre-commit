@@ -1,5 +1,2 @@
-echo "🔍 Rodando ESLint..."
 pnpm lint
-
-echo "🎨 Rodando Prettier..."
-pnpm prettier --check .
+pnpm test
