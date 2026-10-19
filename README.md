@@ -92,6 +92,10 @@ Version 1.x used a `postinstall` script to copy configs and overwrite `package.j
 
 `eslint-plugin-tailwindcss` was dropped because it doesn't support Tailwind CSS v4; class ordering is handled by `prettier-plugin-tailwindcss`.
 
+## Releases
+
+Versioning is driven by the PR title (Conventional Commits, squash-merged): `feat:` → minor, `type!:` or `BREAKING CHANGE:` → major, anything else → patch. On merge to `main`, `.github/workflows/release.yml` bumps the version, tags it, creates the GitHub Release and publishes to npm with provenance (Trusted Publishing).
+
 ## License
 
 [MIT](./LICENSE)
