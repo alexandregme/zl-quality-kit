@@ -1,6 +1,6 @@
 {
   "name": "@alexandregme/zl-quality-kit",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Shared ESLint 9, Prettier and Stylelint configs for React/Next.js projects, with a zl-lint init command.",
   "keywords": [
     "eslint",
