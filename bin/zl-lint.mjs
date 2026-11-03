@@ -12,13 +12,31 @@ const FILES = [
   { template: "editorconfig", target: ".editorconfig" },
   { template: "prettierignore", target: ".prettierignore" },
   // Managed: owned by the kit and rewritten on every init, so a new kit
-  // version updates it. Per-repo settings live in package.json, not here.
+  // version updates them. Per-repo settings live in package.json, not here.
   {
     template: "zl-quality-kit.yml",
     target: ".github/workflows/zl-quality-kit.yml",
     managed: true,
   },
+  // Only for apps that consume zljs: there is nothing to update elsewhere.
+  {
+    template: "zljs-update.yml",
+    target: ".github/workflows/zljs-update.yml",
+    managed: true,
+    when: (pkg) => hasDependency(pkg, "@alexandregme/zljs"),
+    skipReason: "no @alexandregme/zljs in package.json",
+  },
 ];
+
+const hasDependency = (pkg, name) =>
+  Boolean(pkg?.dependencies?.[name] || pkg?.devDependencies?.[name]);
+
+const readPackage = (cwd) => {
+  const pkgPath = path.join(cwd, "package.json");
+  return fs.existsSync(pkgPath)
+    ? JSON.parse(fs.readFileSync(pkgPath, "utf8"))
+    : null;
+};
 
 const STYLE_GLOB = '"**/*.{css,scss}"';
 const SCRIPTS = {
@@ -47,11 +65,17 @@ Writes eslint.config.mjs, prettier.config.mjs, stylelint.config.mjs,
 "lint" / "lint:fix" scripts to package.json. Existing files and scripts
 are kept unless --force is given.
 
-Also writes .github/workflows/zl-quality-kit.yml, which is owned by the kit
-and rewritten on every init. Configure it in package.json ("zlQualityKit").`;
+Also writes .github/workflows/zl-quality-kit.yml and, in an app with
+@alexandregme/zljs, .github/workflows/zljs-update.yml. Both are owned by the
+kit and rewritten on every init. Configure them in package.json ("zlQualityKit").`;
 
 export function init(cwd, { force = false, log = console.log } = {}) {
-  for (const { template, target, managed = false } of FILES) {
+  const pkgBefore = readPackage(cwd);
+  for (const { template, target, managed = false, when, skipReason } of FILES) {
+    if (when && !when(pkgBefore)) {
+      log(`skip   ${target} (${skipReason})`);
+      continue;
+    }
     const targetPath = path.join(cwd, target);
     const exists = fs.existsSync(targetPath);
     if (exists && !force && !managed) {
