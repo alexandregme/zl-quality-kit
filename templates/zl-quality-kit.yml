@@ -20,7 +20,8 @@ permissions:
 jobs:
   check:
     uses: alexandregme/zl-workflows/.github/workflows/zl-quality-kit.yml@main
-    # Required repo secret: ZL_GH_TOKEN, a fine-grained PAT with Contents, Pull
-    # requests and Workflows read and write. The first step checks it and stops
-    # the run in seconds when it is missing or wrong.
+    # Required repo secrets: ZL_GH_TOKEN, a fine-grained PAT with Contents, Pull
+    # requests and Workflows read and write, and ANTHROPIC_API_KEY, a Claude
+    # Console API key for the agent steps. The first step checks both and stops
+    # the run in seconds when one is missing or wrong.
     secrets: inherit

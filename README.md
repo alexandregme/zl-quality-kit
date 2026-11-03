@@ -69,7 +69,9 @@ All keys are optional: `prettierPaths` are extra folders passed to Prettier, `re
 
 Each repository needs a `ZL_GH_TOKEN` secret: a fine-grained personal access token with access to the repository and these repository permissions, all **Read and write**: Contents, Pull requests and Workflows. The default `GITHUB_TOKEN` can't do it, because GitHub never lets it create or change files in `.github/workflows/`, which `init` rewrites. The commit and the pull request are made as you, and the workflows receive the secret through `secrets: inherit`.
 
-The first step of each workflow checks the token before the checkout, and stops the run in seconds, with the reason and how to create the token in the log, when the secret is missing, GitHub rejects it, or it can't reach the repository. A fine-grained token exposes no write permissions through the API, so those are only enforced at the push. See the [`zl-workflows` README](https://github.com/alexandregme/zl-workflows#token).
+Each repository also needs an `ANTHROPIC_API_KEY` secret, a Claude Console API key. The workflows will get agent steps that call the Anthropic API, and the key is required from now on, so every repository is set up before they arrive.
+
+The first step of each workflow checks both secrets before the checkout, and stops the run in seconds, with the reason and how to create the missing one in the log, when a secret is missing, GitHub or Anthropic rejects it, or the token can't reach the repository. A fine-grained token exposes no write permissions through the API, so those are only enforced at the push. See the [`zl-workflows` README](https://github.com/alexandregme/zl-workflows#token).
 
 ## Using the configs directly
 
