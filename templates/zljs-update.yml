@@ -1,0 +1,26 @@
+name: zljs-update
+
+# File owned by @alexandregme/zl-quality-kit: `zl-lint init` writes it in apps
+# with @alexandregme/zljs and rewrites it on every run, so don't edit it here.
+# Per-repo settings go in package.json, under the "zlQualityKit" key
+# (prettierPaths, reviewers, build, test).
+#
+# Every Thursday, 09:00 Brasília (12:00 UTC), the day after the kit: updates
+# zljs to the latest version, runs lint, test and build, and opens a PR
+# requesting a review from the repo owner. If something broke, the PR opens
+# anyway saying what, and the job ends in error. The logic lives in
+# alexandregme/zl-workflows.
+on:
+  schedule:
+    - cron: "0 12 * * 4"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    uses: alexandregme/zl-workflows/.github/workflows/zljs-update.yml@main
+    # Optional repo secret: ZL_GH_TOKEN (PAT; the commit and the PR are made as you).
+    secrets: inherit

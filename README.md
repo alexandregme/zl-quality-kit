@@ -20,14 +20,15 @@ pnpm lint
 
 `zl-lint init` writes these files to the current directory, **skipping any that already exist** (use `--force` to overwrite):
 
-| File                                   | Content                                                             |
-| -------------------------------------- | ------------------------------------------------------------------- |
-| `eslint.config.mjs`                    | `export { default } from "@alexandregme/zl-quality-kit/eslint"`     |
-| `prettier.config.mjs`                  | `export { default } from "@alexandregme/zl-quality-kit/prettier"`   |
-| `stylelint.config.mjs`                 | `export { default } from "@alexandregme/zl-quality-kit/stylelint"`  |
-| `.editorconfig`                        | UTF-8, LF, 2-space indent                                           |
-| `.prettierignore`                      | lockfiles                                                           |
-| `.github/workflows/zl-quality-kit.yml` | weekly GitHub Actions workflow that keeps the kit wired (see below) |
+| File                                   | Content                                                                                                             |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `eslint.config.mjs`                    | `export { default } from "@alexandregme/zl-quality-kit/eslint"`                                                     |
+| `prettier.config.mjs`                  | `export { default } from "@alexandregme/zl-quality-kit/prettier"`                                                   |
+| `stylelint.config.mjs`                 | `export { default } from "@alexandregme/zl-quality-kit/stylelint"`                                                  |
+| `.editorconfig`                        | UTF-8, LF, 2-space indent                                                                                           |
+| `.prettierignore`                      | lockfiles                                                                                                           |
+| `.github/workflows/zl-quality-kit.yml` | weekly GitHub Actions workflow that keeps the kit wired; owned by the kit and rewritten on every `init` (see below) |
+| `.github/workflows/zljs-update.yml`    | weekly GitHub Actions workflow that updates zljs; only in apps with `@alexandregme/zljs`; owned by the kit as well  |
 
 It also adds two scripts to `package.json` when they don't exist yet:
 
@@ -40,11 +41,33 @@ It also adds two scripts to `package.json` when they don't exist yet:
 
 If it finds legacy files (`.eslintrc*`, `.prettierrc*`, `.stylelintrc*`) it warns you to remove them: ESLint 9 ignores them, and Prettier/Stylelint would use them instead of the generated configs.
 
-## Keeping the kit wired
+## Keeping the kit and zljs wired
 
-The generated `.github/workflows/zl-quality-kit.yml` calls the reusable workflow in [`alexandregme/zl-workflows`](https://github.com/alexandregme/zl-workflows) every Monday (and on demand from the Actions tab). It installs the kit if it is missing, re-runs `zl-lint init`, applies `lint:fix`, checks `pnpm lint` and `pnpm build`, and opens a pull request with whatever changed, requesting a review from the repository owner. Nothing is pushed to the base branch.
+The generated workflows call the reusable workflows in [`alexandregme/zl-workflows`](https://github.com/alexandregme/zl-workflows), on a schedule and on demand from the Actions tab. Each opens a pull request with whatever changed, requesting a review from the repository owner. Nothing is pushed to the base branch.
 
-The repository must allow Actions to open pull requests (Settings > Actions > General > "Allow GitHub Actions to create and approve pull requests"), or receive a fine-grained personal access token as the `ZL_GH_TOKEN` secret, in which case the commit and the pull request are made as you. The workflow file is a template: edit it to pass `prettier-paths`, `reviewers` or `build: false`, or delete it if the repository doesn't want the schedule.
+| Workflow                               | When                                  | Does                                                                                                                                                                                                                                                                                                        |
+| -------------------------------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.github/workflows/zl-quality-kit.yml` | Wednesday, 09:00 Brasília (12:00 UTC) | installs the kit if it is missing or updates it to the latest version, re-runs `zl-lint init` (which also refreshes both workflow files), applies `lint:fix`, checks `pnpm lint` and `pnpm build`. A failing check holds the PR.                                                                            |
+| `.github/workflows/zljs-update.yml`    | Thursday, 09:00 Brasília (12:00 UTC)  | updates `@alexandregme/zljs` to the latest version, applies `lint:fix`, runs `pnpm lint`, `pnpm test` and `pnpm build`. A failing check does **not** hold the PR: it opens anyway saying what broke, and the run ends red, so an update that breaks the app gets looked at. Only written in apps with zljs. |
+
+The day after the kit, so a kit release and a zljs release reach an app in two separate pull requests.
+
+The workflow files are **owned by the kit**: `init` rewrites them on every run, so a new kit version updates them through the next pull request. Don't edit them. Per-repository settings go in `package.json`, where both reusable workflows read them:
+
+```json
+{
+  "zlQualityKit": {
+    "prettierPaths": ["src/app/api/[...path]"],
+    "reviewers": ["login1", "login2"],
+    "build": false,
+    "test": false
+  }
+}
+```
+
+All keys are optional: `prettierPaths` are extra folders passed to Prettier, `reviewers` defaults to the repository owner, `build: false` skips `pnpm build` in both, and `test: false` skips `pnpm test` in `zljs-update`. If a repository doesn't want a schedule, disable that workflow in the Actions tab: deleting the file doesn't last, because `init` writes it again.
+
+The repository must allow Actions to open pull requests (Settings > Actions > General > "Allow GitHub Actions to create and approve pull requests"), or receive a fine-grained personal access token as the `ZL_GH_TOKEN` secret, in which case the commit and the pull request are made as you. The workflows receive the secret through `secrets: inherit`.
 
 ## Using the configs directly
 

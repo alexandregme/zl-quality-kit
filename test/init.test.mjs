@@ -42,16 +42,97 @@ describe("zl-lint init", () => {
     );
   });
 
-  it("keeps an existing workflow file", () => {
+  it("rewrites the managed workflow file", () => {
     writePkg({ name: "app" });
     fs.mkdirSync(path.join(dir, ".github/workflows"), { recursive: true });
     fs.writeFileSync(
       path.join(dir, ".github/workflows/zl-quality-kit.yml"),
       "custom",
     );
+    const lines = [];
+    init(dir, { log: (line) => lines.push(line) });
+
+    assert.match(
+      read(".github/workflows/zl-quality-kit.yml"),
+      /uses: alexandregme\/zl-workflows/,
+    );
+    assert.ok(
+      lines.some((line) =>
+        line.startsWith("update .github/workflows/zl-quality-kit.yml"),
+      ),
+    );
+  });
+
+  it("writes the zljs-update workflow only for apps with zljs", () => {
+    writePkg({ name: "app", dependencies: { "@alexandregme/zljs": "^2.0.0" } });
     init(dir, { log: silent });
 
-    assert.equal(read(".github/workflows/zl-quality-kit.yml"), "custom");
+    assert.match(
+      read(".github/workflows/zljs-update.yml"),
+      /uses: alexandregme\/zl-workflows\/\.github\/workflows\/zljs-update\.yml@main/,
+    );
+    assert.match(
+      read(".github/workflows/zljs-update.yml"),
+      /cron: "0 12 \* \* 4"/,
+    );
+    assert.match(
+      read(".github/workflows/zl-quality-kit.yml"),
+      /cron: "0 12 \* \* 3"/,
+    );
+  });
+
+  it("skips the zljs-update workflow without zljs", () => {
+    writePkg({ name: "app" });
+    const lines = [];
+    init(dir, { log: (line) => lines.push(line) });
+
+    assert.ok(
+      !fs.existsSync(path.join(dir, ".github/workflows/zljs-update.yml")),
+    );
+    assert.ok(
+      lines.some((line) =>
+        line.startsWith(
+          "skip   .github/workflows/zljs-update.yml (no @alexandregme/zljs",
+        ),
+      ),
+    );
+  });
+
+  it("rewrites the zljs-update workflow in an app with zljs", () => {
+    writePkg({
+      name: "app",
+      devDependencies: { "@alexandregme/zljs": "^2.0.0" },
+    });
+    fs.mkdirSync(path.join(dir, ".github/workflows"), { recursive: true });
+    fs.writeFileSync(
+      path.join(dir, ".github/workflows/zljs-update.yml"),
+      "custom",
+    );
+    const lines = [];
+    init(dir, { log: (line) => lines.push(line) });
+
+    assert.match(
+      read(".github/workflows/zljs-update.yml"),
+      /uses: alexandregme\/zl-workflows/,
+    );
+    assert.ok(
+      lines.some((line) =>
+        line.startsWith("update .github/workflows/zljs-update.yml"),
+      ),
+    );
+  });
+
+  it("reports the managed workflow file as up to date", () => {
+    writePkg({ name: "app" });
+    init(dir, { log: silent });
+    const lines = [];
+    init(dir, { log: (line) => lines.push(line) });
+
+    assert.ok(
+      lines.some((line) =>
+        line.startsWith("ok     .github/workflows/zl-quality-kit.yml"),
+      ),
+    );
   });
 
   it("adds lint scripts", () => {

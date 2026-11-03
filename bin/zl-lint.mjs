@@ -11,11 +11,32 @@ const FILES = [
   { template: "stylelint.config.mjs", target: "stylelint.config.mjs" },
   { template: "editorconfig", target: ".editorconfig" },
   { template: "prettierignore", target: ".prettierignore" },
+  // Managed: owned by the kit and rewritten on every init, so a new kit
+  // version updates them. Per-repo settings live in package.json, not here.
   {
     template: "zl-quality-kit.yml",
     target: ".github/workflows/zl-quality-kit.yml",
+    managed: true,
+  },
+  // Only for apps that consume zljs: there is nothing to update elsewhere.
+  {
+    template: "zljs-update.yml",
+    target: ".github/workflows/zljs-update.yml",
+    managed: true,
+    when: (pkg) => hasDependency(pkg, "@alexandregme/zljs"),
+    skipReason: "no @alexandregme/zljs in package.json",
   },
 ];
+
+const hasDependency = (pkg, name) =>
+  Boolean(pkg?.dependencies?.[name] || pkg?.devDependencies?.[name]);
+
+const readPackage = (cwd) => {
+  const pkgPath = path.join(cwd, "package.json");
+  return fs.existsSync(pkgPath)
+    ? JSON.parse(fs.readFileSync(pkgPath, "utf8"))
+    : null;
+};
 
 const STYLE_GLOB = '"**/*.{css,scss}"';
 const SCRIPTS = {
@@ -40,20 +61,35 @@ const LEGACY = [
 const USAGE = `Usage: zl-lint init [--force]
 
 Writes eslint.config.mjs, prettier.config.mjs, stylelint.config.mjs,
-.editorconfig, .prettierignore and .github/workflows/zl-quality-kit.yml to the
-current directory, and adds "lint" / "lint:fix" scripts to package.json.
-Existing files and scripts are kept unless --force is given.`;
+.editorconfig and .prettierignore to the current directory, and adds
+"lint" / "lint:fix" scripts to package.json. Existing files and scripts
+are kept unless --force is given.
+
+Also writes .github/workflows/zl-quality-kit.yml and, in an app with
+@alexandregme/zljs, .github/workflows/zljs-update.yml. Both are owned by the
+kit and rewritten on every init. Configure them in package.json ("zlQualityKit").`;
 
 export function init(cwd, { force = false, log = console.log } = {}) {
-  for (const { template, target } of FILES) {
+  const pkgBefore = readPackage(cwd);
+  for (const { template, target, managed = false, when, skipReason } of FILES) {
+    if (when && !when(pkgBefore)) {
+      log(`skip   ${target} (${skipReason})`);
+      continue;
+    }
     const targetPath = path.join(cwd, target);
-    if (fs.existsSync(targetPath) && !force) {
+    const exists = fs.existsSync(targetPath);
+    if (exists && !force && !managed) {
       log(`skip   ${target} (already exists, use --force to overwrite)`);
       continue;
     }
+    const content = fs.readFileSync(path.join(templatesDir, template));
+    if (exists && content.equals(fs.readFileSync(targetPath))) {
+      log(`ok     ${target} (up to date)`);
+      continue;
+    }
     fs.mkdirSync(path.dirname(targetPath), { recursive: true });
-    fs.copyFileSync(path.join(templatesDir, template), targetPath);
-    log(`write  ${target}`);
+    fs.writeFileSync(targetPath, content);
+    log(`${exists ? "update" : "write "} ${target}`);
   }
 
   const pkgPath = path.join(cwd, "package.json");
