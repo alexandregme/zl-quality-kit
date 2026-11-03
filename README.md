@@ -67,7 +67,9 @@ The workflow files are **owned by the kit**: `init` rewrites them on every run, 
 
 All keys are optional: `prettierPaths` are extra folders passed to Prettier, `reviewers` defaults to the repository owner, `build: false` skips `pnpm build` in both, and `test: false` skips `pnpm test` in `zljs-update`. If a repository doesn't want a schedule, disable that workflow in the Actions tab: deleting the file doesn't last, because `init` writes it again.
 
-The repository must allow Actions to open pull requests (Settings > Actions > General > "Allow GitHub Actions to create and approve pull requests"), or receive a fine-grained personal access token as the `ZL_GH_TOKEN` secret, in which case the commit and the pull request are made as you. The workflows receive the secret through `secrets: inherit`.
+Each repository needs a `ZL_GH_TOKEN` secret: a fine-grained personal access token with access to the repository and these repository permissions, all **Read and write**: Contents, Pull requests and Workflows. The default `GITHUB_TOKEN` can't do it, because GitHub never lets it create or change files in `.github/workflows/`, which `init` rewrites. The commit and the pull request are made as you, and the workflows receive the secret through `secrets: inherit`.
+
+The first step of each workflow checks the token before the checkout, and stops the run in seconds, with the reason and how to create the token in the log, when the secret is missing, GitHub rejects it, or it can't reach the repository. A fine-grained token exposes no write permissions through the API, so those are only enforced at the push. See the [`zl-workflows` README](https://github.com/alexandregme/zl-workflows#token).
 
 ## Using the configs directly
 

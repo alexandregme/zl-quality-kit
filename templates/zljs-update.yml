@@ -22,5 +22,7 @@ permissions:
 jobs:
   update:
     uses: alexandregme/zl-workflows/.github/workflows/zljs-update.yml@main
-    # Optional repo secret: ZL_GH_TOKEN (PAT; the commit and the PR are made as you).
+    # Required repo secret: ZL_GH_TOKEN, a fine-grained PAT with Contents, Pull
+    # requests and Workflows read and write. The first step checks it and stops
+    # the run in seconds when it is missing or wrong.
     secrets: inherit
