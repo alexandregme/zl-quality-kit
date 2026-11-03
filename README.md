@@ -20,14 +20,14 @@ pnpm lint
 
 `zl-lint init` writes these files to the current directory, **skipping any that already exist** (use `--force` to overwrite):
 
-| File                                   | Content                                                             |
-| -------------------------------------- | ------------------------------------------------------------------- |
-| `eslint.config.mjs`                    | `export { default } from "@alexandregme/zl-quality-kit/eslint"`     |
-| `prettier.config.mjs`                  | `export { default } from "@alexandregme/zl-quality-kit/prettier"`   |
-| `stylelint.config.mjs`                 | `export { default } from "@alexandregme/zl-quality-kit/stylelint"`  |
-| `.editorconfig`                        | UTF-8, LF, 2-space indent                                           |
-| `.prettierignore`                      | lockfiles                                                           |
-| `.github/workflows/zl-quality-kit.yml` | weekly GitHub Actions workflow that keeps the kit wired (see below) |
+| File                                   | Content                                                                                                             |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `eslint.config.mjs`                    | `export { default } from "@alexandregme/zl-quality-kit/eslint"`                                                     |
+| `prettier.config.mjs`                  | `export { default } from "@alexandregme/zl-quality-kit/prettier"`                                                   |
+| `stylelint.config.mjs`                 | `export { default } from "@alexandregme/zl-quality-kit/stylelint"`                                                  |
+| `.editorconfig`                        | UTF-8, LF, 2-space indent                                                                                           |
+| `.prettierignore`                      | lockfiles                                                                                                           |
+| `.github/workflows/zl-quality-kit.yml` | weekly GitHub Actions workflow that keeps the kit wired; owned by the kit and rewritten on every `init` (see below) |
 
 It also adds two scripts to `package.json` when they don't exist yet:
 
@@ -42,9 +42,25 @@ If it finds legacy files (`.eslintrc*`, `.prettierrc*`, `.stylelintrc*`) it warn
 
 ## Keeping the kit wired
 
-The generated `.github/workflows/zl-quality-kit.yml` calls the reusable workflow in [`alexandregme/zl-workflows`](https://github.com/alexandregme/zl-workflows) every Monday (and on demand from the Actions tab). It installs the kit if it is missing, re-runs `zl-lint init`, applies `lint:fix`, checks `pnpm lint` and `pnpm build`, and opens a pull request with whatever changed, requesting a review from the repository owner. Nothing is pushed to the base branch.
+The generated `.github/workflows/zl-quality-kit.yml` calls the reusable workflow in [`alexandregme/zl-workflows`](https://github.com/alexandregme/zl-workflows) every Monday (and on demand from the Actions tab). It installs the kit if it is missing or updates it to the latest version, re-runs `zl-lint init`, applies `lint:fix`, checks `pnpm lint` and `pnpm build`, and opens a pull request with whatever changed, requesting a review from the repository owner. Nothing is pushed to the base branch.
 
-The repository must allow Actions to open pull requests (Settings > Actions > General > "Allow GitHub Actions to create and approve pull requests"), or receive a fine-grained personal access token as the `ZL_GH_TOKEN` secret, in which case the commit and the pull request are made as you. The workflow file is a template: edit it to pass `prettier-paths`, `reviewers` or `build: false`, or delete it if the repository doesn't want the schedule.
+The workflow file is **owned by the kit**: `init` rewrites it on every run, so a new kit version updates it through the next pull request. Don't edit it. Per-repository settings go in `package.json`, where the reusable workflow reads them:
+
+```json
+{
+  "zlQualityKit": {
+    "prettierPaths": ["src/app/api/[...path]"],
+    "reviewers": ["login1", "login2"],
+    "build": false
+  }
+}
+```
+
+All keys are optional: `prettierPaths` are extra folders passed to Prettier, `reviewers` defaults to the repository owner, and `build: false` skips `pnpm build`. If a repository doesn't want the schedule, disable the workflow in the Actions tab: deleting the file doesn't last, because `init` writes it again.
+
+The repository must allow Actions to open pull requests (Settings > Actions > General > "Allow GitHub Actions to create and approve pull requests"), or receive a fine-grained personal access token as the `ZL_GH_TOKEN` secret, in which case the commit and the pull request are made as you.
+
+When `pnpm lint` still fails after `lint:fix`, the workflow asks Claude (Haiku) to fix the remaining errors in the source, without disabling rules, and lints again. This step only runs when the repository has an `ANTHROPIC_API_KEY` secret; without it the run fails as a plain lint failure. The workflow receives both secrets through `secrets: inherit`.
 
 ## Using the configs directly
 
