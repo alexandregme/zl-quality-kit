@@ -36,6 +36,22 @@ describe("zl-lint init", () => {
     );
     assert.match(read(".editorconfig"), /root = true/);
     assert.match(read(".prettierignore"), /pnpm-lock\.yaml/);
+    assert.match(
+      read(".github/workflows/zl-quality-kit.yml"),
+      /uses: alexandregme\/zl-workflows\/\.github\/workflows\/zl-quality-kit\.yml@main/,
+    );
+  });
+
+  it("keeps an existing workflow file", () => {
+    writePkg({ name: "app" });
+    fs.mkdirSync(path.join(dir, ".github/workflows"), { recursive: true });
+    fs.writeFileSync(
+      path.join(dir, ".github/workflows/zl-quality-kit.yml"),
+      "custom",
+    );
+    init(dir, { log: silent });
+
+    assert.equal(read(".github/workflows/zl-quality-kit.yml"), "custom");
   });
 
   it("adds lint scripts", () => {

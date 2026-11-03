@@ -11,6 +11,10 @@ const FILES = [
   { template: "stylelint.config.mjs", target: "stylelint.config.mjs" },
   { template: "editorconfig", target: ".editorconfig" },
   { template: "prettierignore", target: ".prettierignore" },
+  {
+    template: "zl-quality-kit.yml",
+    target: ".github/workflows/zl-quality-kit.yml",
+  },
 ];
 
 const STYLE_GLOB = '"**/*.{css,scss}"';
@@ -36,8 +40,9 @@ const LEGACY = [
 const USAGE = `Usage: zl-lint init [--force]
 
 Writes eslint.config.mjs, prettier.config.mjs, stylelint.config.mjs,
-.editorconfig and .prettierignore to the current directory, and adds "lint" / "lint:fix" scripts
-to package.json. Existing files and scripts are kept unless --force is given.`;
+.editorconfig, .prettierignore and .github/workflows/zl-quality-kit.yml to the
+current directory, and adds "lint" / "lint:fix" scripts to package.json.
+Existing files and scripts are kept unless --force is given.`;
 
 export function init(cwd, { force = false, log = console.log } = {}) {
   for (const { template, target } of FILES) {
@@ -46,6 +51,7 @@ export function init(cwd, { force = false, log = console.log } = {}) {
       log(`skip   ${target} (already exists, use --force to overwrite)`);
       continue;
     }
+    fs.mkdirSync(path.dirname(targetPath), { recursive: true });
     fs.copyFileSync(path.join(templatesDir, template), targetPath);
     log(`write  ${target}`);
   }

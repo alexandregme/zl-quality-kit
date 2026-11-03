@@ -1,0 +1,25 @@
+name: zl-quality-kit
+
+# Toda segunda-feira, 09:00 de Brasilia (12:00 UTC): garante que o repo usa o
+# @alexandregme/zl-quality-kit e abre um PR com o que mudou, pedindo review ao
+# dono do repo. A logica fica em alexandregme/zl-workflows; aqui so o gatilho,
+# as permissoes e os ajustes. Escrito por `zl-lint init`.
+on:
+  schedule:
+    - cron: "0 12 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check:
+    uses: alexandregme/zl-workflows/.github/workflows/zl-quality-kit.yml@main
+    # with:
+    #   prettier-paths: "src/app/api/[...path]" # pastas extras para o Prettier
+    #   reviewers: "login1,login2"              # padrao: dono do repo
+    #   build: false                            # pular o pnpm build
+    secrets:
+      # opcional: com um fine-grained PAT aqui, o commit e o PR saem no seu usuario
+      gh_token: ${{ secrets.ZL_GH_TOKEN }}
