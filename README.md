@@ -58,9 +58,7 @@ The workflow file is **owned by the kit**: `init` rewrites it on every run, so a
 
 All keys are optional: `prettierPaths` are extra folders passed to Prettier, `reviewers` defaults to the repository owner, and `build: false` skips `pnpm build`. If a repository doesn't want the schedule, disable the workflow in the Actions tab: deleting the file doesn't last, because `init` writes it again.
 
-The repository must allow Actions to open pull requests (Settings > Actions > General > "Allow GitHub Actions to create and approve pull requests"), or receive a fine-grained personal access token as the `ZL_GH_TOKEN` secret, in which case the commit and the pull request are made as you.
-
-When `pnpm lint` still fails after `lint:fix`, the workflow asks Claude (Haiku) to fix the remaining errors in the source, without disabling rules, and lints again. This step only runs when the repository has an `ANTHROPIC_API_KEY` secret; without it the run fails as a plain lint failure. The workflow receives both secrets through `secrets: inherit`.
+The repository must allow Actions to open pull requests (Settings > Actions > General > "Allow GitHub Actions to create and approve pull requests"), or receive a fine-grained personal access token as the `ZL_GH_TOKEN` secret, in which case the commit and the pull request are made as you. The workflow receives the secret through `secrets: inherit`.
 
 ## Using the configs directly
 
