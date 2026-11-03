@@ -6,6 +6,7 @@ import prettier from "eslint-config-prettier";
 import a11y from "eslint-plugin-jsx-a11y";
 import react from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
+import globals from "globals";
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
@@ -28,11 +29,7 @@ export default [
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",
-      globals: {
-        process: "readonly",
-        console: "readonly",
-        URL: "readonly",
-      },
+      globals: { ...globals.node },
     },
   },
 
@@ -50,6 +47,9 @@ export default [
     rules: {
       ...tsPlugin.configs.recommended.rules,
       "@typescript-eslint/no-explicit-any": "warn",
+      // TypeScript already checks identifiers; no-undef only flags DOM and
+      // Node globals here (window, HTMLElement, process)
+      "no-undef": "off",
     },
   },
 
@@ -61,7 +61,7 @@ export default [
       ecmaVersion: "latest",
       sourceType: "module",
       parserOptions: { ecmaFeatures: { jsx: true } },
-      globals: { React: "readonly" },
+      globals: { ...globals.browser, React: "readonly" },
     },
     settings: { react: { version: "detect" } },
     rules: {
