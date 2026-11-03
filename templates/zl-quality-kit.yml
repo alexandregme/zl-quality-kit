@@ -1,9 +1,13 @@
 name: zl-quality-kit
 
-# Toda segunda-feira, 09:00 de Brasilia (12:00 UTC): garante que o repo usa o
-# @alexandregme/zl-quality-kit e abre um PR com o que mudou, pedindo review ao
-# dono do repo. A logica fica em alexandregme/zl-workflows; aqui so o gatilho,
-# as permissoes e os ajustes. Escrito por `zl-lint init`.
+# Arquivo gerenciado pelo @alexandregme/zl-quality-kit: `zl-lint init` o
+# reescreve a cada execucao, entao nao edite aqui. Ajustes por repo ficam no
+# package.json, na chave "zlQualityKit" (prettierPaths, reviewers, build).
+#
+# Toda segunda-feira, 09:00 de Brasilia (12:00 UTC): atualiza o kit, roda o
+# init e o lint, corrige o que sobrar com Claude (se o repo tiver o secret
+# ANTHROPIC_API_KEY) e abre um PR pedindo review ao dono do repo. A logica
+# fica em alexandregme/zl-workflows.
 on:
   schedule:
     - cron: "0 12 * * 1"
@@ -12,14 +16,11 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  id-token: write
 
 jobs:
   check:
     uses: alexandregme/zl-workflows/.github/workflows/zl-quality-kit.yml@main
-    # with:
-    #   prettier-paths: "src/app/api/[...path]" # pastas extras para o Prettier
-    #   reviewers: "login1,login2"              # padrao: dono do repo
-    #   build: false                            # pular o pnpm build
-    secrets:
-      # opcional: com um fine-grained PAT aqui, o commit e o PR saem no seu usuario
-      gh_token: ${{ secrets.ZL_GH_TOKEN }}
+    # Secrets opcionais do repo: ZL_GH_TOKEN (PAT; commit e PR saem no seu
+    # usuario) e ANTHROPIC_API_KEY (liga a correcao de lint com Claude).
+    secrets: inherit

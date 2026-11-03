@@ -42,16 +42,38 @@ describe("zl-lint init", () => {
     );
   });
 
-  it("keeps an existing workflow file", () => {
+  it("rewrites the managed workflow file", () => {
     writePkg({ name: "app" });
     fs.mkdirSync(path.join(dir, ".github/workflows"), { recursive: true });
     fs.writeFileSync(
       path.join(dir, ".github/workflows/zl-quality-kit.yml"),
       "custom",
     );
-    init(dir, { log: silent });
+    const lines = [];
+    init(dir, { log: (line) => lines.push(line) });
 
-    assert.equal(read(".github/workflows/zl-quality-kit.yml"), "custom");
+    assert.match(
+      read(".github/workflows/zl-quality-kit.yml"),
+      /uses: alexandregme\/zl-workflows/,
+    );
+    assert.ok(
+      lines.some((line) =>
+        line.startsWith("update .github/workflows/zl-quality-kit.yml"),
+      ),
+    );
+  });
+
+  it("reports the managed workflow file as up to date", () => {
+    writePkg({ name: "app" });
+    init(dir, { log: silent });
+    const lines = [];
+    init(dir, { log: (line) => lines.push(line) });
+
+    assert.ok(
+      lines.some((line) =>
+        line.startsWith("ok     .github/workflows/zl-quality-kit.yml"),
+      ),
+    );
   });
 
   it("adds lint scripts", () => {

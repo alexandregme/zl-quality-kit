@@ -11,9 +11,12 @@ const FILES = [
   { template: "stylelint.config.mjs", target: "stylelint.config.mjs" },
   { template: "editorconfig", target: ".editorconfig" },
   { template: "prettierignore", target: ".prettierignore" },
+  // Managed: owned by the kit and rewritten on every init, so a new kit
+  // version updates it. Per-repo settings live in package.json, not here.
   {
     template: "zl-quality-kit.yml",
     target: ".github/workflows/zl-quality-kit.yml",
+    managed: true,
   },
 ];
 
@@ -40,20 +43,29 @@ const LEGACY = [
 const USAGE = `Usage: zl-lint init [--force]
 
 Writes eslint.config.mjs, prettier.config.mjs, stylelint.config.mjs,
-.editorconfig, .prettierignore and .github/workflows/zl-quality-kit.yml to the
-current directory, and adds "lint" / "lint:fix" scripts to package.json.
-Existing files and scripts are kept unless --force is given.`;
+.editorconfig and .prettierignore to the current directory, and adds
+"lint" / "lint:fix" scripts to package.json. Existing files and scripts
+are kept unless --force is given.
+
+Also writes .github/workflows/zl-quality-kit.yml, which is owned by the kit
+and rewritten on every init. Configure it in package.json ("zlQualityKit").`;
 
 export function init(cwd, { force = false, log = console.log } = {}) {
-  for (const { template, target } of FILES) {
+  for (const { template, target, managed = false } of FILES) {
     const targetPath = path.join(cwd, target);
-    if (fs.existsSync(targetPath) && !force) {
+    const exists = fs.existsSync(targetPath);
+    if (exists && !force && !managed) {
       log(`skip   ${target} (already exists, use --force to overwrite)`);
       continue;
     }
+    const content = fs.readFileSync(path.join(templatesDir, template));
+    if (exists && content.equals(fs.readFileSync(targetPath))) {
+      log(`ok     ${target} (up to date)`);
+      continue;
+    }
     fs.mkdirSync(path.dirname(targetPath), { recursive: true });
-    fs.copyFileSync(path.join(templatesDir, template), targetPath);
-    log(`write  ${target}`);
+    fs.writeFileSync(targetPath, content);
+    log(`${exists ? "update" : "write "} ${target}`);
   }
 
   const pkgPath = path.join(cwd, "package.json");
