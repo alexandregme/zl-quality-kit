@@ -5,9 +5,8 @@ name: zl-quality-kit
 # package.json, na chave "zlQualityKit" (prettierPaths, reviewers, build).
 #
 # Toda segunda-feira, 09:00 de Brasilia (12:00 UTC): atualiza o kit, roda o
-# init e o lint, corrige o que sobrar com Claude (se o repo tiver o secret
-# ANTHROPIC_API_KEY) e abre um PR pedindo review ao dono do repo. A logica
-# fica em alexandregme/zl-workflows.
+# init, o lint e o build, e abre um PR pedindo review ao dono do repo. A
+# logica fica em alexandregme/zl-workflows.
 on:
   schedule:
     - cron: "0 12 * * 1"
@@ -16,11 +15,9 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  id-token: write
 
 jobs:
   check:
     uses: alexandregme/zl-workflows/.github/workflows/zl-quality-kit.yml@main
-    # Secrets opcionais do repo: ZL_GH_TOKEN (PAT; commit e PR saem no seu
-    # usuario) e ANTHROPIC_API_KEY (liga a correcao de lint com Claude).
+    # Secret opcional do repo: ZL_GH_TOKEN (PAT; commit e PR saem no seu usuario).
     secrets: inherit
