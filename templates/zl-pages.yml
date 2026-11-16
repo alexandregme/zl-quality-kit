@@ -1,0 +1,28 @@
+name: zl-pages
+
+# File owned by @alexandregme/zl-quality-kit: `zl-lint init` writes it in
+# Next.js apps with @alexandregme/zljs and rewrites it on every run, so don't
+# edit it here.
+#
+# Every Friday, 09:00 Brasília (12:00 UTC), the day after the zljs update:
+# lists the pages of the app from its route files and syncs the labels of the
+# repo, one "page: <route>" per page and one "area: <name>" per thing the pages
+# are validated for. The issues that carry them come next. The logic lives in
+# alexandregme/zl-workflows.
+on:
+  schedule:
+    - cron: "0 12 * * 5"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  pages:
+    uses: alexandregme/zl-workflows/.github/workflows/zl-pages.yml@main
+    # Required repo secret: ZL_GH_TOKEN, the same fine-grained PAT of the other
+    # zl workflows, with the Issues permission (Read and write) added. The
+    # first step checks the token and stops the run in seconds when it is
+    # missing or wrong.
+    secrets: inherit

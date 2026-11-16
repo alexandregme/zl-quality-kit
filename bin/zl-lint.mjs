@@ -26,6 +26,15 @@ const FILES = [
     when: (pkg) => hasDependency(pkg, "@alexandregme/zljs"),
     skipReason: "no @alexandregme/zljs in package.json",
   },
+  // Only for Next.js apps with zljs: the pages come from the route files.
+  {
+    template: "zl-pages.yml",
+    target: ".github/workflows/zl-pages.yml",
+    managed: true,
+    when: (pkg) =>
+      hasDependency(pkg, "@alexandregme/zljs") && hasDependency(pkg, "next"),
+    skipReason: "no @alexandregme/zljs with next in package.json",
+  },
 ];
 
 const hasDependency = (pkg, name) =>
@@ -65,9 +74,10 @@ Writes eslint.config.mjs, prettier.config.mjs, stylelint.config.mjs,
 "lint" / "lint:fix" scripts to package.json. Existing files and scripts
 are kept unless --force is given.
 
-Also writes .github/workflows/zl-quality-kit.yml and, in an app with
-@alexandregme/zljs, .github/workflows/zljs-update.yml. Both are owned by the
-kit and rewritten on every init. Configure them in package.json ("zlQualityKit").`;
+Also writes .github/workflows/zl-quality-kit.yml, in an app with
+@alexandregme/zljs, .github/workflows/zljs-update.yml and, when that app uses
+Next.js, .github/workflows/zl-pages.yml. All are owned by the kit and
+rewritten on every init. Configure them in package.json ("zlQualityKit").`;
 
 export function init(cwd, { force = false, log = console.log } = {}) {
   const pkgBefore = readPackage(cwd);

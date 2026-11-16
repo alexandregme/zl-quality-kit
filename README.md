@@ -20,15 +20,16 @@ pnpm lint
 
 `zl-lint init` writes these files to the current directory, **skipping any that already exist** (use `--force` to overwrite):
 
-| File                                   | Content                                                                                                             |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `eslint.config.mjs`                    | `export { default } from "@alexandregme/zl-quality-kit/eslint"`                                                     |
-| `prettier.config.mjs`                  | `export { default } from "@alexandregme/zl-quality-kit/prettier"`                                                   |
-| `stylelint.config.mjs`                 | `export { default } from "@alexandregme/zl-quality-kit/stylelint"`                                                  |
-| `.editorconfig`                        | UTF-8, LF, 2-space indent                                                                                           |
-| `.prettierignore`                      | lockfiles                                                                                                           |
-| `.github/workflows/zl-quality-kit.yml` | weekly GitHub Actions workflow that keeps the kit wired; owned by the kit and rewritten on every `init` (see below) |
-| `.github/workflows/zljs-update.yml`    | weekly GitHub Actions workflow that updates zljs; only in apps with `@alexandregme/zljs`; owned by the kit as well  |
+| File                                   | Content                                                                                                                                              |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `eslint.config.mjs`                    | `export { default } from "@alexandregme/zl-quality-kit/eslint"`                                                                                      |
+| `prettier.config.mjs`                  | `export { default } from "@alexandregme/zl-quality-kit/prettier"`                                                                                    |
+| `stylelint.config.mjs`                 | `export { default } from "@alexandregme/zl-quality-kit/stylelint"`                                                                                   |
+| `.editorconfig`                        | UTF-8, LF, 2-space indent                                                                                                                            |
+| `.prettierignore`                      | lockfiles                                                                                                                                            |
+| `.github/workflows/zl-quality-kit.yml` | weekly GitHub Actions workflow that keeps the kit wired; owned by the kit and rewritten on every `init` (see below)                                  |
+| `.github/workflows/zljs-update.yml`    | weekly GitHub Actions workflow that updates zljs; only in apps with `@alexandregme/zljs`; owned by the kit as well                                   |
+| `.github/workflows/zl-pages.yml`       | weekly GitHub Actions workflow that follows the app's pages through labels; only in Next.js apps with `@alexandregme/zljs`; owned by the kit as well |
 
 It also adds two scripts to `package.json` when they don't exist yet:
 
@@ -43,16 +44,18 @@ If it finds legacy files (`.eslintrc*`, `.prettierrc*`, `.stylelintrc*`) it warn
 
 ## Keeping the kit and zljs wired
 
-The generated workflows call the reusable workflows in [`alexandregme/zl-workflows`](https://github.com/alexandregme/zl-workflows), on a schedule and on demand from the Actions tab. Each opens a pull request with whatever changed, requesting a review from the repository owner. Nothing is pushed to the base branch.
+The generated workflows call the reusable workflows in [`alexandregme/zl-workflows`](https://github.com/alexandregme/zl-workflows), on a schedule and on demand from the Actions tab. The first two each open a pull request with whatever changed, requesting a review from the repository owner. Nothing is pushed to the base branch.
 
-| Workflow                               | When                                  | Does                                                                                                                                                                                                                                                                                                           |
-| -------------------------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.github/workflows/zl-quality-kit.yml` | Wednesday, 09:00 Brasília (12:00 UTC) | installs the kit if it is missing or updates it to the latest version, re-runs `zl-lint init` (which also refreshes both workflow files), applies `lint:fix`, checks `pnpm lint`, `pnpm test` and `pnpm build`. A failing check holds the PR. A repository with no `test` script skips the test with a notice. |
-| `.github/workflows/zljs-update.yml`    | Thursday, 09:00 Brasília (12:00 UTC)  | updates `@alexandregme/zljs` to the latest version, applies `lint:fix`, runs `pnpm lint`, `pnpm test` and `pnpm build`. A failing check does **not** hold the PR: it opens anyway saying what broke, and the run ends red, so an update that breaks the app gets looked at. Only written in apps with zljs.    |
+| Workflow                               | When                                  | Does                                                                                                                                                                                                                                                                                                          |
+| -------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.github/workflows/zl-quality-kit.yml` | Wednesday, 09:00 Brasília (12:00 UTC) | installs the kit if it is missing or updates it to the latest version, re-runs `zl-lint init` (which also refreshes the workflow files), applies `lint:fix`, checks `pnpm lint`, `pnpm test` and `pnpm build`. A failing check holds the PR. A repository with no `test` script skips the test with a notice. |
+| `.github/workflows/zljs-update.yml`    | Thursday, 09:00 Brasília (12:00 UTC)  | updates `@alexandregme/zljs` to the latest version, applies `lint:fix`, runs `pnpm lint`, `pnpm test` and `pnpm build`. A failing check does **not** hold the PR: it opens anyway saying what broke, and the run ends red, so an update that breaks the app gets looked at. Only written in apps with zljs.   |
 
-The day after the kit, so a kit release and a zljs release reach an app in two separate pull requests.
+| `.github/workflows/zl-pages.yml` | Friday, 09:00 Brasília (12:00 UTC) | lists the pages of the app from its Next.js route files and syncs the repository's labels: one `page: <route>` per page and one `area: <name>` per thing the pages are validated for (`components`, `state-management`, `nextjs-config`, `zljs-improvement`). It opens no pull request and never touches other labels. Only written in Next.js apps with zljs. |
 
-The workflow files are **owned by the kit**: `init` rewrites them on every run, so a new kit version updates them through the next pull request. Don't edit them. Per-repository settings go in `package.json`, where both reusable workflows read them:
+The zljs update runs the day after the kit, so a kit release and a zljs release reach an app in two separate pull requests.
+
+The workflow files are **owned by the kit**: `init` rewrites them on every run, so a new kit version updates them through the next pull request. Don't edit them. Per-repository settings go in `package.json`, where the first two reusable workflows read them:
 
 ```json
 {
@@ -67,7 +70,7 @@ The workflow files are **owned by the kit**: `init` rewrites them on every run, 
 
 All keys are optional: `prettierPaths` are extra folders passed to Prettier, `reviewers` defaults to the repository owner, `build: false` skips `pnpm build` and `test: false` skips `pnpm test`, in both. If a repository doesn't want a schedule, disable that workflow in the Actions tab: deleting the file doesn't last, because `init` writes it again.
 
-Each repository needs a `ZL_GH_TOKEN` secret: a fine-grained personal access token with access to the repository and these repository permissions, all **Read and write**: Contents, Pull requests and Workflows. The default `GITHUB_TOKEN` can't do it, because GitHub never lets it create or change files in `.github/workflows/`, which `init` rewrites. The commit and the pull request are made as you, and the workflows receive the secret through `secrets: inherit`.
+Each repository needs a `ZL_GH_TOKEN` secret: a fine-grained personal access token with access to the repository and these repository permissions, all **Read and write**: Contents, Pull requests and Workflows, plus Issues for `zl-pages`. The default `GITHUB_TOKEN` can't do it, because GitHub never lets it create or change files in `.github/workflows/`, which `init` rewrites. The commit and the pull request are made as you, and the workflows receive the secret through `secrets: inherit`.
 
 Each repository also needs an `ANTHROPIC_API_KEY` secret, a Claude Console API key. The workflows will get agent steps that call the Anthropic API, and the key is required from now on, so every repository is set up before they arrive.
 

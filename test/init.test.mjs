@@ -98,6 +98,42 @@ describe("zl-lint init", () => {
     );
   });
 
+  it("writes the zl-pages workflow only for Next.js apps with zljs", () => {
+    writePkg({
+      name: "app",
+      dependencies: { "@alexandregme/zljs": "^3.0.0", next: "^16.0.0" },
+    });
+    init(dir, { log: silent });
+
+    assert.match(
+      read(".github/workflows/zl-pages.yml"),
+      /uses: alexandregme\/zl-workflows\/\.github\/workflows\/zl-pages\.yml@main/,
+    );
+    assert.match(
+      read(".github/workflows/zl-pages.yml"),
+      /cron: "0 12 \* \* 5"/,
+    );
+    assert.match(read(".github/workflows/zl-pages.yml"), /issues: write/);
+  });
+
+  it("skips the zl-pages workflow in a zljs app without Next.js", () => {
+    writePkg({ name: "app", dependencies: { "@alexandregme/zljs": "^3.0.0" } });
+    const lines = [];
+    init(dir, { log: (line) => lines.push(line) });
+
+    assert.ok(!fs.existsSync(path.join(dir, ".github/workflows/zl-pages.yml")));
+    assert.ok(
+      fs.existsSync(path.join(dir, ".github/workflows/zljs-update.yml")),
+    );
+    assert.ok(
+      lines.some((line) =>
+        line.startsWith(
+          "skip   .github/workflows/zl-pages.yml (no @alexandregme/zljs with next",
+        ),
+      ),
+    );
+  });
+
   it("rewrites the zljs-update workflow in an app with zljs", () => {
     writePkg({
       name: "app",
