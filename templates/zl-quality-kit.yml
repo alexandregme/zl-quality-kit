@@ -16,12 +16,12 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  id-token: write # the OIDC token that fetches the secrets from Infisical
 
 jobs:
   check:
     uses: alexandregme/zl-workflows/.github/workflows/zl-quality-kit.yml@main
-    # Required repo secrets: ZL_GH_TOKEN, a fine-grained PAT with Contents, Pull
-    # requests and Workflows read and write, and ANTHROPIC_API_KEY, a Claude
-    # Console API key for the agent steps. The first step checks both and stops
+    # No repo secret: the workflow fetches ZL_GH_TOKEN and ANTHROPIC_API_KEY from
+    # Infisical with the run's OIDC token, which is why the permissions above
+    # include id-token: write. The first steps fetch and check both, and stop
     # the run in seconds when one is missing or wrong.
-    secrets: inherit

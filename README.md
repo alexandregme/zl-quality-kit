@@ -70,11 +70,11 @@ The workflow files are **owned by the kit**: `init` rewrites them on every run, 
 
 All keys are optional: `prettierPaths` are extra folders passed to Prettier, `reviewers` defaults to the repository owner, `build: false` skips `pnpm build` and `test: false` skips `pnpm test`, in both. If a repository doesn't want a schedule, disable that workflow in the Actions tab: deleting the file doesn't last, because `init` writes it again.
 
-Each repository needs a `ZL_GH_TOKEN` secret: a fine-grained personal access token with access to the repository and these repository permissions, all **Read and write**: Contents, Pull requests and Workflows, plus Issues for `zl-pages`. The default `GITHUB_TOKEN` can't do it, because GitHub never lets it create or change files in `.github/workflows/`, which `init` rewrites. The commit and the pull request are made as you, and the workflows receive the secret through `secrets: inherit`.
+No repository stores a secret. The workflows use `ZL_GH_TOKEN`, a fine-grained personal access token, and `ANTHROPIC_API_KEY`, a Claude Console API key, and fetch both from one Infisical project on every run, signing in with the run's GitHub OIDC token. That is why each caller grants `id-token: write`. A new repository only has to be added to the token's repository access.
 
-Each repository also needs an `ANTHROPIC_API_KEY` secret, a Claude Console API key. The workflows will get agent steps that call the Anthropic API, and the key is required from now on, so every repository is set up before they arrive.
+The token needs these repository permissions, all **Read and write**: Contents, Pull requests and Workflows, plus Issues for `zl-pages`. The default `GITHUB_TOKEN` can't do it, because GitHub never lets it create or change files in `.github/workflows/`, which `init` rewrites. The commit and the pull request are made as you.
 
-The first step of each workflow checks both secrets before the checkout, and stops the run in seconds, with the reason and how to create the missing one in the log, when a secret is missing, GitHub or Anthropic rejects it, or the token can't reach the repository. A fine-grained token exposes no write permissions through the API, so those are only enforced at the push. See the [`zl-workflows` README](https://github.com/alexandregme/zl-workflows#token).
+The first steps of each workflow fetch and check both secrets before the checkout, and stop the run in seconds, with the reason and how to fix it in the log, when the caller doesn't grant `id-token: write`, a secret is missing in Infisical, GitHub or Anthropic rejects it, or the token can't reach the repository. A fine-grained token exposes no write permissions through the API, so those are only enforced at the push. See the [`zl-workflows` README](https://github.com/alexandregme/zl-workflows#secrets).
 
 ## Using the configs directly
 

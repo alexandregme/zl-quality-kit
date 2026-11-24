@@ -116,6 +116,20 @@ describe("zl-lint init", () => {
     assert.match(read(".github/workflows/zl-pages.yml"), /issues: write/);
   });
 
+  it("grants id-token: write in every caller and passes no repo secret", () => {
+    writePkg({
+      name: "app",
+      dependencies: { "@alexandregme/zljs": "^3.0.0", next: "^16.0.0" },
+    });
+    init(dir, { log: silent });
+
+    for (const name of ["zl-quality-kit", "zljs-update", "zl-pages"]) {
+      const caller = read(`.github/workflows/${name}.yml`);
+      assert.match(caller, /^ {2}id-token: write/m);
+      assert.doesNotMatch(caller, /^\s*secrets:/m);
+    }
+  });
+
   it("skips the zl-pages workflow in a zljs app without Next.js", () => {
     writePkg({ name: "app", dependencies: { "@alexandregme/zljs": "^3.0.0" } });
     const lines = [];
