@@ -17,12 +17,12 @@ on:
 permissions:
   contents: read
   issues: write
+  id-token: write # the OIDC token that fetches the secrets from Infisical
 
 jobs:
   pages:
     uses: alexandregme/zl-workflows/.github/workflows/zl-pages.yml@main
-    # Required repo secret: ZL_GH_TOKEN, the same fine-grained PAT of the other
-    # zl workflows, with the Issues permission (Read and write) added. The
-    # first step checks the token and stops the run in seconds when it is
-    # missing or wrong.
-    secrets: inherit
+    # No repo secret: the workflow fetches ZL_GH_TOKEN from Infisical with the
+    # run's OIDC token, which is why the permissions above include
+    # id-token: write. The first steps fetch and check the token, and stop the
+    # run in seconds when it is missing or wrong.
